@@ -1,0 +1,568 @@
+{
+  "title": "Krish's Learning Hub",
+  "term": "Fall 2026",
+  "start": "2026-10-12",
+  "weeks": 7,
+  "due": "Sunday 9pm ET",
+  "checkin": "Every Sunday at 7:48pm ET a check-in arrives in Claude. Reply with your repo link, your results table and your quiz answers from memory.",
+  "rules": [
+    "A lab passes only when the output matches a reference, the README has real numbers from your RTX 4060, and you can answer that week's quiz without notes.",
+    "If a lab doesn't pass, next week starts by finishing it. No new material on a broken foundation.",
+    "The GPU track is the core. On heavy exam weeks, the two agent tracks can be dropped and made up later; the GPU lab cannot.",
+    "Stuck? Spend 20 minutes yourself, then ask in the GPU MODE Discord #beginner channel, then bring the error to Claude. Never sit stuck for more than an hour."
+  ],
+  "tracks": [
+    {
+      "id": "gpu",
+      "name": "GPU Kernels",
+      "blurb": "CUDA fundamentals for four weeks, then Triton, ending with a fused AV preprocessing kernel for NeuralDrive.",
+      "load": "about 8 hrs a week",
+      "sessions": "Mon lecture, Wed reading, Fri and Sun lab",
+      "core": true
+    },
+    {
+      "id": "infer",
+      "name": "Inference Systems",
+      "blurb": "What Wafer works on: why LLM serving is slow, how vLLM and SGLang fix it, quantization, speculative decoding, and agents that write kernels.",
+      "load": "about 2 hrs a week",
+      "sessions": "Tue, one session",
+      "core": false
+    },
+    {
+      "id": "agents",
+      "name": "Building Agents",
+      "blurb": "Agent patterns, a tool-use loop from scratch, MCP, context engineering, evals and multi-agent orchestration. The capstone joins this track with Inference Systems.",
+      "load": "about 2 hrs a week",
+      "sessions": "Thu, one session",
+      "core": false
+    }
+  ],
+  "modules": [
+    {
+      "track": "gpu", "week": 1,
+      "title": "Setup and your first kernels",
+      "goal": "Write, launch and verify a 1D and a 2D CUDA kernel on your own 4060.",
+      "blocks": [
+        {"label": "Mon: setup and lecture", "kind": "watch", "items": [
+          "Install with NVIDIA's [CUDA on WSL guide](https://docs.nvidia.com/cuda/wsl-user-guide). Inside WSL install only the `cuda-toolkit` package, never `cuda` or `cuda-drivers`. Confirm with `nvidia-smi` and `nvcc --version`.",
+          "Watch the [freeCodeCamp CUDA course](https://www.youtube.com/watch?v=86FAWCzIe_4), chapters 2 and 3 (Setup, C/C++ Review). Clone the course code from [Infatoshi/cuda-course](https://github.com/Infatoshi/cuda-course).",
+          "Create the `gpu-kernels` repo with folders `01-cuda/`, `02-triton/`, `03-tensorrt/`, `04-jetson/`, `05-nki/`."
+        ]},
+        {"label": "Wed: lecture and reading", "kind": "read", "items": [
+          "Watch freeCodeCamp chapters 4 and 5 (Intro to GPUs, Writing Your First Kernels).",
+          "Read PMPP (4th ed.) chapters 2 and 3. No book yet? Watch GPU MODE Lecture 2 from the [lectures repo](https://github.com/gpu-mode/lectures), which recaps those chapters.",
+          "On paper: draw 3 blocks of 4 threads and label which array index each thread handles."
+        ]},
+        {"label": "Fri and Sun: Lab 1", "kind": "lab", "items": [
+          "`vector_add.cu` with a CPU reference, a `CUDA_CHECK()` macro and a bounds check. It prints `PASS`.",
+          "Time it with `cudaEvent_t` at block sizes 32, 128, 256 and 1024, with N = 10 million.",
+          "`grayscale.cu`: RGB to gray on a nuScenes camera frame using a 2D grid (`dim3`).",
+          "README with the block-size timing table and one sentence on what you noticed."
+        ]},
+        {"label": "Practice: do at least 2", "kind": "practice", "items": [
+          "[GPU Puzzles](https://github.com/srush/GPU-Puzzles) 1 to 8 in Colab.",
+          "LeetGPU [Vector Addition](https://leetgpu.com/challenges/vector-addition).",
+          "One more beginner problem from [LeetGPU](https://leetgpu.com/challenges), such as Color Inversion."
+        ]}
+      ],
+      "quiz": [
+        "Write the global index formula for a 1D launch and explain each term.",
+        "Why do you need `if (i < n)`? Give a concrete N and block size where it matters.",
+        "A kernel launch returns right away. What does that mean for timing, and what fixes it?",
+        "What is the grid size for N = 1,000,000 with 256 threads per block? Show the ceiling division.",
+        "In a 2D launch, how does a thread compute its (row, col), and how does that become an index into a row-major image?"
+      ]
+    },
+    {
+      "track": "gpu", "week": 2,
+      "title": "How the GPU actually runs your code",
+      "goal": "Explain warps, divergence, coalescing and memory-bound versus compute-bound, using your own measurements as evidence.",
+      "blocks": [
+        {"label": "Mon: lecture", "kind": "watch", "items": [
+          "Watch GPU MODE Lecture 4, Intro to Compute and Memory Architecture ([lectures repo](https://github.com/gpu-mode/lectures)).",
+          "Watch freeCodeCamp chapter 6 (CUDA API)."
+        ]},
+        {"label": "Wed: reading", "kind": "read", "items": [
+          "Read PMPP chapter 4 and the coalescing section of chapter 6.",
+          "Read NVIDIA's [How to Access Global Memory Efficiently](https://developer.nvidia.com/blog/how-access-global-memory-efficiently-cuda-c-kernels/).",
+          "Read Horace He's [Making Deep Learning Go Brrrr From First Principles](https://horace.io/brrr_intro.html).",
+          "Look up your 4060's peak memory bandwidth (GB/s) and peak FP32 throughput (TFLOPS). Write them at the top of your notes."
+        ]},
+        {"label": "Fri and Sun: Lab 2", "kind": "lab", "items": [
+          "`device_query.cu`: print SM count, max threads per block and shared memory per block.",
+          "`divergence.cu`: even/odd threads branching versus whole warps branching together. Time both.",
+          "`matmul_naive.cu`: one thread per output element, verified against a CPU matmul at 64×64.",
+          "Benchmark naive matmul at 512, 1024 and 2048. GFLOPS = 2·N³ / time. Record the % of your 4060's peak.",
+          "Optional: naive versus shared-memory transpose, following NVIDIA's [Efficient Matrix Transpose](https://developer.nvidia.com/blog/efficient-matrix-transpose-cuda-cc/)."
+        ]},
+        {"label": "Practice: do at least 2", "kind": "practice", "items": [
+          "[GPU Puzzles](https://github.com/srush/GPU-Puzzles) 9 to 14.",
+          "LeetGPU Matrix Transpose.",
+          "LeetGPU [Matrix Multiplication](https://leetgpu.com/challenges/matrix-multiplication), naive version only."
+        ]}
+      ],
+      "quiz": [
+        "What is a warp, and why should block sizes be multiples of 32?",
+        "What happens when threads in one warp take different branches? Use your divergence numbers.",
+        "Draw coalesced versus strided access for 4 threads. Why is one faster?",
+        "What is arithmetic intensity? Is naive matmul memory-bound or compute-bound, and how do you know?",
+        "Why do GPUs want many more threads than they have cores?"
+      ]
+    },
+    {
+      "track": "gpu", "week": 3,
+      "title": "Shared memory and tiled matmul",
+      "goal": "Have a tiled matmul you wrote yourself, benchmarked against naive and cuBLAS, and be able to explain why it is faster.",
+      "blocks": [
+        {"label": "Mon: lecture", "kind": "watch", "items": [
+          "Watch freeCodeCamp chapter 7 (Faster Matrix Multiplication).",
+          "Watch GPU MODE Lecture 8, CUDA Performance Checklist ([lectures repo](https://github.com/gpu-mode/lectures))."
+        ]},
+        {"label": "Wed: reading", "kind": "read", "items": [
+          "Read PMPP chapter 5 slowly. It is the tiled matmul chapter.",
+          "Read NVIDIA's [Using Shared Memory in CUDA C/C++](https://developer.nvidia.com/blog/using-shared-memory-cuda-cc/).",
+          "On paper: trace one output element of a 4×4 matmul with 2×2 tiles through every tile phase. Mark each `__syncthreads()` and why it is there."
+        ]},
+        {"label": "Fri and Sun: Lab 3", "kind": "lab", "items": [
+          "`matmul_tiled.cu` written from scratch, with the video and book closed.",
+          "Verify against your Week 2 naive kernel.",
+          "Try tile sizes 8, 16 and 32, and record GFLOPS for each.",
+          "Compare with cuBLAS `cublasSgemm`. It is column-major, so check your layout.",
+          "README table: naive vs tiled vs cuBLAS, GFLOPS and % of peak at N = 1024 and 2048.",
+          "Try the padding trick `tile[TILE][TILE + 1]` and note whether it changes anything."
+        ]},
+        {"label": "Practice: do at least 1", "kind": "practice", "items": [
+          "The matmul puzzle at the end of [GPU Puzzles](https://github.com/srush/GPU-Puzzles).",
+          "LeetGPU [Matrix Multiplication](https://leetgpu.com/challenges/matrix-multiplication) again, now tiled. Compare with last week's runtime."
+        ]}
+      ],
+      "quiz": [
+        "Why does tiling speed up matmul? Answer in terms of arithmetic intensity: how many times is each global value reused?",
+        "Where do the two `__syncthreads()` calls go, and what breaks if you remove each one?",
+        "What is a bank conflict, and how does the +1 padding avoid it?",
+        "Your tiled kernel versus cuBLAS: what is the gap, and what is one thing cuBLAS does that you don't?"
+      ]
+    },
+    {
+      "track": "gpu", "week": 4,
+      "title": "Reduction, profiling, and the CUDA midterm",
+      "goal": "Profile any kernel and say, with evidence, whether it is memory-bound or compute-bound.",
+      "exam": true,
+      "blocks": [
+        {"label": "Mon: lecture", "kind": "watch", "items": [
+          "Watch GPU MODE Lecture 9, Reductions.",
+          "Watch GPU MODE Lecture 16, Hands-on Profiling (both in the [lectures repo](https://github.com/gpu-mode/lectures))."
+        ]},
+        {"label": "Wed: reading", "kind": "read", "items": [
+          "Read Mark Harris, [Optimizing Parallel Reduction in CUDA](https://developer.download.nvidia.com/compute/cuda/1.1-Beta/x86_website/projects/reduction/doc/reduction.pdf).",
+          "Read PMPP chapter 10.",
+          "Skim the [Nsight Compute profiling guide](https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html): memory throughput, SM throughput, occupancy.",
+          "Reward, only after your tiled kernel works: Simon Boehm's [How to Optimize a CUDA Matmul Kernel](https://siboehm.com/articles/22/CUDA-MMM)."
+        ]},
+        {"label": "Fri and Sun: Lab 4", "kind": "lab", "items": [
+          "Reduction v1 (interleaved), v2 (sequential), v3 (add during load), v4 (warp shuffle with `__shfl_down_sync`).",
+          "Measure each in GB/s and as a % of your 4060's peak bandwidth.",
+          "Run `ncu --set full` on naive matmul, tiled matmul and reduction v4.",
+          "For each, one sentence: memory- or compute-bound, plus the metric that shows it.",
+          "Top-level `01-cuda/README.md` with the matmul table, the reduction table and one Nsight screenshot."
+        ]},
+        {"label": "Midterm: Sunday, no notes", "kind": "exam", "items": [
+          "Record a 5-minute screen recording (or explain at a whiteboard) covering: thread indexing in 1D and 2D, warps and divergence, coalescing with a drawing, why tiling helps, and one Nsight report walkthrough."
+        ]}
+      ],
+      "quiz": []
+    },
+    {
+      "track": "gpu", "week": 5,
+      "title": "Triton's programming model",
+      "goal": "Think in blocks instead of threads, and have a fused softmax that beats PyTorch's unfused version.",
+      "blocks": [
+        {"label": "Mon: lecture", "kind": "watch", "items": [
+          "Watch freeCodeCamp chapter 8 (Triton).",
+          "Watch GPU MODE Lecture 14, Practitioner's Guide to Triton ([lectures repo](https://github.com/gpu-mode/lectures))."
+        ]},
+        {"label": "Wed: reading", "kind": "read", "items": [
+          "Work through the [Triton tutorials](https://triton-lang.org/main/getting-started/tutorials/) Vector Addition and Fused Softmax, typing the code yourself.",
+          "Write a side-by-side note: what CUDA made you do by hand that Triton handles."
+        ]},
+        {"label": "Fri and Sun: Lab 5", "kind": "lab", "items": [
+          "Triton vector add, benchmarked against PyTorch with `triton.testing.do_bench`.",
+          "Fused softmax: numerically stable, one row per program.",
+          "Benchmark it against `torch.softmax` and a naive multi-op PyTorch version across row widths.",
+          "Debug one kernel on purpose with `TRITON_INTERPRET=1`.",
+          "README with a GB/s table and one paragraph on why fusion wins."
+        ]},
+        {"label": "Practice", "kind": "practice", "items": [
+          "Solve two problems you already did on [LeetGPU](https://leetgpu.com/challenges), this time in Triton."
+        ]}
+      ],
+      "quiz": [
+        "CUDA programs one thread; Triton programs one what? What does `tl.program_id(0)` correspond to in CUDA?",
+        "What does the `mask` in `tl.load` do, and what CUDA line does it replace?",
+        "Why must `BLOCK_SIZE` be a `tl.constexpr`?",
+        "Why does fusing softmax save time? Count global memory reads and writes, fused versus unfused."
+      ]
+    },
+    {
+      "track": "gpu", "week": 6,
+      "title": "Triton matmul, autotuning, and FlashAttention",
+      "goal": "Race a Triton matmul against your CUDA kernel and cuBLAS, and be able to teach online softmax.",
+      "blocks": [
+        {"label": "Mon: lecture", "kind": "watch", "items": [
+          "Watch GPU MODE Lecture 12, Flash Attention ([lectures repo](https://github.com/gpu-mode/lectures))."
+        ]},
+        {"label": "Wed: reading", "kind": "read", "items": [
+          "[Triton tutorials](https://triton-lang.org/main/getting-started/tutorials/): Matrix Multiplication, then Layer Normalization.",
+          "Read the [FlashAttention paper](https://arxiv.org/abs/2205.14135), sections 1 to 3.",
+          "Read the Triton Fused Attention tutorial line by line and annotate it."
+        ]},
+        {"label": "Fri and Sun: Lab 6", "kind": "lab", "items": [
+          "Triton matmul with `@triton.autotune`. Record which `num_warps` / `num_stages` config wins at each size.",
+          "Table: Triton vs your CUDA tiled vs cuBLAS at N = 1024, 2048 and 4096.",
+          "Run your BEV model with `torch.compile` and `TORCH_LOGS=\"output_code\"`. Find one generated Triton kernel and explain what it fuses.",
+          "Write online softmax in plain Python and check it against `torch.softmax`."
+        ]}
+      ],
+      "quiz": [
+        "Why is the N×N attention matrix a memory problem? Estimate its size for N = 8192 in FP16.",
+        "Explain online softmax: what two values do you carry between chunks, and how do you correct earlier partial sums?",
+        "What do `num_warps` and `num_stages` control?",
+        "Why does `tl.dot` with FP16 inputs run so much faster than FP32 on your 4060?"
+      ]
+    },
+    {
+      "track": "gpu", "week": 7,
+      "title": "Final project: a fused AV preprocessing kernel",
+      "goal": "NeuralDrive's camera preprocessing runs as one Triton kernel, with a benchmark you can put on your resume.",
+      "exam": true,
+      "blocks": [
+        {"label": "Lecture, any day", "kind": "watch", "items": [
+          "Watch GPU MODE Lecture 18, Fused Kernels ([lectures repo](https://github.com/gpu-mode/lectures))."
+        ]},
+        {"label": "Spec", "kind": "read", "items": [
+          "Input: a `uint8` frame, HWC, BGR. Output: `float32` (with a `float16` option), CHW, RGB, normalized with per-channel mean and std. One kernel, one pass."
+        ]},
+        {"label": "Deliverables", "kind": "lab", "items": [
+          "PyTorch baseline: flip channels, `permute(2,0,1)`, `.float()`, divide by 255, normalize.",
+          "Triton kernel, verified with `torch.allclose`.",
+          "Batch support for the 6 nuScenes cameras.",
+          "FP16 output option.",
+          "Benchmark grid: 640×480, 1280×720, 1920×1080 at batch 1, 4 and 6.",
+          "Achieved GB/s as a % of peak (it is memory-bound).",
+          "Plug it into NeuralDrive v2 and measure the end-to-end change.",
+          "Stretch: fuse the letterbox resize into the same kernel."
+        ]},
+        {"label": "Final exam: Sunday, no notes", "kind": "exam", "items": [
+          "Record a walkthrough covering CUDA's thread model versus Triton's block model, why fusion helps memory-bound ops (with your numbers), online softmax, and your final project README."
+        ]}
+      ],
+      "quiz": []
+    },
+
+    {
+      "track": "infer", "week": 1,
+      "title": "Anatomy of LLM inference",
+      "goal": "Measure prefill and decode separately on your own GPU, and explain why decode is memory-bound.",
+      "blocks": [
+        {"label": "Tue: read", "kind": "read", "items": [
+          "Read the [gpt-fast](https://github.com/meta-pytorch/gpt-fast) README, then `generate.py` start to finish. It is a complete inference engine in under 1,000 lines of PyTorch.",
+          "If you haven't yet, read the overhead and bandwidth sections of [Making Deep Learning Go Brrrr](https://horace.io/brrr_intro.html)."
+        ]},
+        {"label": "Tue: build", "kind": "lab", "items": [
+          "In `inference/week1/`, run a small instruct model (0.5B to 1.5B parameters fits in 8 GB) with Hugging Face `generate`.",
+          "Measure time-to-first-token (prefill) and tokens per second (decode) at prompt lengths 128, 1024 and 4096.",
+          "Write the KV cache size formula for your model (layers × 2 × heads × head_dim × bytes × tokens) and compute it at 4096 tokens."
+        ]}
+      ],
+      "quiz": [
+        "What is the difference between prefill and decode, and which one is memory-bound?",
+        "What does the KV cache store, and why does it grow with sequence length?",
+        "Why does batching help decode throughput so much?"
+      ]
+    },
+    {
+      "track": "infer", "week": 2,
+      "title": "Serving engines: PagedAttention and continuous batching",
+      "goal": "Serve the same model with vLLM and draw its throughput-versus-latency curve.",
+      "blocks": [
+        {"label": "Tue: read", "kind": "read", "items": [
+          "Read the [vLLM paper](https://arxiv.org/abs/2309.06180), sections 1 to 4. Focus on why naive KV allocation wastes memory and how paging fixes it.",
+          "Skim the [vLLM quickstart](https://docs.vllm.ai/en/stable/getting_started/quickstart/)."
+        ]},
+        {"label": "Tue: build", "kind": "lab", "items": [
+          "Serve last week's model with vLLM in WSL.",
+          "Sweep concurrency at 1, 4, 16 and 64 requests. Record throughput (tokens/s) and p50 / p99 latency.",
+          "Compare tokens/s at concurrency 16 against your Hugging Face number from Week 1."
+        ]}
+      ],
+      "quiz": [
+        "What is continuous batching, and how is it different from static batching?",
+        "What problem does PagedAttention solve? Use the words fragmentation and block table.",
+        "On your curve, where does adding more concurrency stop helping, and why?"
+      ]
+    },
+    {
+      "track": "infer", "week": 3,
+      "title": "Quantization",
+      "goal": "Know what you trade when you quantize, with speed, memory and quality numbers from your own runs.",
+      "blocks": [
+        {"label": "Tue: read", "kind": "read", "items": [
+          "Read the [AWQ paper](https://arxiv.org/abs/2306.00978), sections 1 to 3.",
+          "Look up which quantized formats vLLM supports on your GPU generation (Ada, sm_89)."
+        ]},
+        {"label": "Tue: build", "kind": "lab", "items": [
+          "Run the FP16 model and an int4 (AWQ or GPTQ) version of a slightly larger model in vLLM.",
+          "Record memory used, decode tokens/s and time-to-first-token for each.",
+          "Write 20 test prompts with expected answers and compare quality by hand. Note where the quantized model gets worse."
+        ]}
+      ],
+      "quiz": [
+        "Why does weight-only int4 speed up decode but help prefill much less?",
+        "What does AWQ do differently from rounding every weight the same way?",
+        "When would you not quantize?"
+      ]
+    },
+    {
+      "track": "infer", "week": 4,
+      "title": "Speculative decoding",
+      "goal": "Measure acceptance rate and real speedup from speculative decoding on your GPU.",
+      "exam": true,
+      "blocks": [
+        {"label": "Tue: read", "kind": "read", "items": [
+          "Read [Fast Inference from Transformers via Speculative Decoding](https://arxiv.org/abs/2211.17192), sections 1 to 3.",
+          "Read the speculative sampling section of [gpt-fast](https://github.com/meta-pytorch/gpt-fast)."
+        ]},
+        {"label": "Tue: build (light, midterm week)", "kind": "lab", "items": [
+          "Turn on speculative decoding in vLLM (n-gram or a small draft model).",
+          "Record acceptance rate and tokens/s on two prompt types: code (repetitive) and open-ended chat."
+        ]}
+      ],
+      "quiz": [
+        "Why does speculative decoding produce exactly the same output distribution as the target model?",
+        "Why does it help more on code than on open-ended chat?"
+      ]
+    },
+    {
+      "track": "infer", "week": 5,
+      "title": "Prefix caching and SGLang",
+      "goal": "Show a workload where prefix caching wins big, and explain RadixAttention.",
+      "blocks": [
+        {"label": "Tue: read", "kind": "read", "items": [
+          "Read the [SGLang paper](https://arxiv.org/abs/2312.07104), sections 1 to 3. Focus on RadixAttention."
+        ]},
+        {"label": "Tue: build", "kind": "lab", "items": [
+          "Build a workload where 50 requests share a 2,000-token system prompt and differ only at the end.",
+          "Run it with prefix caching off and on (vLLM or SGLang). Record time-to-first-token and throughput.",
+          "Write down which real products have this traffic shape (agents with long system prompts are one)."
+        ]}
+      ],
+      "quiz": [
+        "What does RadixAttention store in the radix tree, and when does it evict?",
+        "Why do agent workloads benefit so much from prefix caching?"
+      ]
+    },
+    {
+      "track": "infer", "week": 6,
+      "title": "Agents that write kernels",
+      "goal": "Run KernelBench's evaluation on a kernel you wrote, and understand how agent-written kernels are scored.",
+      "blocks": [
+        {"label": "Tue: read", "kind": "read", "items": [
+          "Read the [KernelBench paper](https://arxiv.org/abs/2502.10517), sections 1 to 4, and skim the [KernelBench repo](https://github.com/ScalingIntelligence/KernelBench).",
+          "Optional: browse [Wafer Daily Kernel](https://docs.wafer.ai/daily-kernel) to see what a production version of this looks like."
+        ]},
+        {"label": "Tue: build", "kind": "lab", "items": [
+          "Pick one Level 1 KernelBench problem. Write a Triton solution yourself.",
+          "Run the KernelBench correctness and speed check on it. Record the speedup over PyTorch eager.",
+          "Then ask Claude to write a solution to the same problem and run the same check. Compare: correct? faster? how many tries?"
+        ]}
+      ],
+      "quiz": [
+        "What does KernelBench's fast_p metric measure?",
+        "Name two ways an agent can cheat a kernel benchmark, and how a harness catches them."
+      ]
+    },
+    {
+      "track": "infer", "week": 7,
+      "title": "Capstone: a mini Wafer",
+      "goal": "An agent that searches serving configs for a traffic shape and ships the measured winner. Shared with the Building Agents capstone.",
+      "exam": true,
+      "blocks": [
+        {"label": "Deliverables (shared with Building Agents week 7)", "kind": "lab", "items": [
+          "Define two traffic shapes: short chat with high concurrency, and long-prefix agent requests.",
+          "The agent proposes vLLM configs (quantization, max batch size, prefix caching, speculative decoding), benchmarks each through your MCP tools, and keeps the winner per shape.",
+          "Every candidate must pass a correctness check before it can win.",
+          "README: the search log, the winning config per shape, and the speedup over default settings."
+        ]}
+      ],
+      "quiz": [
+        "Why did the winning config differ between the two traffic shapes?"
+      ]
+    },
+
+    {
+      "track": "agents", "week": 1,
+      "title": "Agent patterns, without a framework",
+      "goal": "Know the basic workflow patterns and build two of them with the raw Claude API.",
+      "blocks": [
+        {"label": "Thu: read", "kind": "read", "items": [
+          "Read Anthropic's [Building Effective Agents](https://www.anthropic.com/engineering/building-effective-agents). Make a one-line note for each pattern: prompt chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer.",
+          "Skim the Claude [tool use overview](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)."
+        ]},
+        {"label": "Thu: build", "kind": "lab", "items": [
+          "In `agents/week1/`, build prompt chaining: a 3-step chain that turns a GPU lab README into a resume bullet, with a check between steps.",
+          "Build routing: classify a question as CUDA, Triton or other and send it to a different system prompt.",
+          "No frameworks this week. Just the API and plain Python."
+        ]}
+      ],
+      "quiz": [
+        "What is the difference between a workflow and an agent, according to the post?",
+        "When would you choose orchestrator-workers over parallelization?"
+      ]
+    },
+    {
+      "track": "agents", "week": 2,
+      "title": "The agent loop from scratch",
+      "goal": "A working tool-use agent loop of about 100 lines that you understand completely.",
+      "blocks": [
+        {"label": "Thu: read", "kind": "read", "items": [
+          "Read the Claude [tool use docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview) properly this time: tool definitions, `tool_use` and `tool_result` blocks, stop reasons."
+        ]},
+        {"label": "Thu: build", "kind": "lab", "items": [
+          "Write an agent loop with two tools: `run_shell` (sandboxed to one folder) and `read_file`.",
+          "Add a max-steps limit, a stop condition, and a log of every tool call.",
+          "Task to test it: \"compile and run my vector_add.cu and tell me if it passes.\""
+        ]}
+      ],
+      "quiz": [
+        "Walk through one loop iteration: what goes to the model, what comes back, what you append.",
+        "Why does an agent need a max-steps limit even when the model is good?"
+      ]
+    },
+    {
+      "track": "agents", "week": 3,
+      "title": "MCP: tools any agent can use",
+      "goal": "Your benchmark scripts exposed as an MCP server that Claude can call.",
+      "blocks": [
+        {"label": "Thu: read", "kind": "read", "items": [
+          "Follow the official [Build an MCP server](https://modelcontextprotocol.io/docs/develop/build-server) tutorial in Python."
+        ]},
+        {"label": "Thu: build", "kind": "lab", "items": [
+          "Build an MCP server with `run_benchmark(script, args)` and `read_results(path)` tools for your `gpu-kernels` repo.",
+          "Connect it to Claude Desktop or Claude Code and have Claude run your Week 2 matmul benchmark through it.",
+          "These tools get reused in the capstone, so write clear tool descriptions."
+        ]}
+      ],
+      "quiz": [
+        "What are MCP's three server capabilities, and which one did you use?",
+        "Why does the tool description matter so much to how well the agent uses it?"
+      ]
+    },
+    {
+      "track": "agents", "week": 4,
+      "title": "Context engineering",
+      "goal": "Keep a long-running agent useful by controlling what is in its context.",
+      "exam": true,
+      "blocks": [
+        {"label": "Thu: read", "kind": "read", "items": [
+          "Read Anthropic's [Effective Context Engineering for AI Agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)."
+        ]},
+        {"label": "Thu: build (light, midterm week)", "kind": "lab", "items": [
+          "Add a notes file to your Week 2 agent that it reads at the start and updates at the end.",
+          "Truncate large tool outputs to their head and tail, and log tokens per run before and after."
+        ]}
+      ],
+      "quiz": [
+        "What is context rot, and what are two ways to fight it?",
+        "When is a notes file better than keeping the full history?"
+      ]
+    },
+    {
+      "track": "agents", "week": 5,
+      "title": "Evals",
+      "goal": "An eval set for your agent, with a pass rate you can track as you change it.",
+      "blocks": [
+        {"label": "Thu: read", "kind": "read", "items": [
+          "Read Hamel Husain's [Your AI Product Needs Evals](https://hamel.dev/blog/posts/evals/)."
+        ]},
+        {"label": "Thu: build", "kind": "lab", "items": [
+          "Write 20 test tasks for your agent with checkable outcomes (a file exists, a benchmark ran, a number is in range).",
+          "Run all 20, record the pass rate, and read every failure. Group failures into 3 to 5 types.",
+          "Fix the most common failure type and rerun. Record the new pass rate."
+        ]}
+      ],
+      "quiz": [
+        "What are the three levels of evals in the post?",
+        "Why look at every failure by hand before building automated graders?"
+      ]
+    },
+    {
+      "track": "agents", "week": 6,
+      "title": "Multi-agent orchestration",
+      "goal": "An orchestrator that splits work across parallel workers and merges the results.",
+      "blocks": [
+        {"label": "Thu: read", "kind": "read", "items": [
+          "Read Anthropic's [How We Built Our Multi-Agent Research System](https://www.anthropic.com/engineering/multi-agent-research-system)."
+        ]},
+        {"label": "Thu: build", "kind": "lab", "items": [
+          "Build an orchestrator that gets a goal (\"find the best block size for my matmul\"), spawns 3 workers that each benchmark a different range in parallel, then merges their findings.",
+          "Log total tokens and wall-clock time versus a single agent doing it alone."
+        ]}
+      ],
+      "quiz": [
+        "When does multi-agent beat a single agent, and when is it a waste of tokens?",
+        "How does the orchestrator stop workers from duplicating work?"
+      ]
+    },
+    {
+      "track": "agents", "week": 7,
+      "title": "Capstone: a mini Wafer",
+      "goal": "The agent from this track drives the Inference Systems capstone. One project, two tracks.",
+      "exam": true,
+      "blocks": [
+        {"label": "Deliverables (shared with Inference Systems week 7)", "kind": "lab", "items": [
+          "Reuse your Week 3 MCP tools for benchmarking.",
+          "Use your Week 5 evals to check the agent picks a correct, faster config at least 4 of 5 times.",
+          "Record a 2-minute demo video of the agent searching and picking a winner.",
+          "Write the project up as one resume bullet with a real speedup number."
+        ]}
+      ],
+      "quiz": [
+        "Where did your agent fail during the capstone, and what did you change?"
+      ]
+    }
+  ],
+  "resources": [
+    {"title": "freeCodeCamp CUDA course", "url": "https://www.youtube.com/watch?v=86FAWCzIe_4", "what": "12-hour video course by Elliot Arledge", "track": "gpu"},
+    {"title": "Infatoshi/cuda-course", "url": "https://github.com/Infatoshi/cuda-course", "what": "Code for the freeCodeCamp course", "track": "gpu"},
+    {"title": "GPU MODE lectures", "url": "https://github.com/gpu-mode/lectures", "what": "Slides, code and recording links", "track": "gpu"},
+    {"title": "GPU MODE resource stream", "url": "https://github.com/gpu-mode/resource-stream", "what": "Curated list of further CUDA material", "track": "gpu"},
+    {"title": "GPU MODE Discord", "url": "https://discord.gg/gpumode", "what": "Where to ask when you're stuck", "track": "gpu"},
+    {"title": "CUDA on WSL guide", "url": "https://docs.nvidia.com/cuda/wsl-user-guide", "what": "NVIDIA's install guide", "track": "gpu"},
+    {"title": "GPU Puzzles", "url": "https://github.com/srush/GPU-Puzzles", "what": "Interactive CUDA puzzles in Colab", "track": "gpu"},
+    {"title": "LeetGPU challenges", "url": "https://leetgpu.com/challenges", "what": "Auto-graded kernel problems", "track": "gpu"},
+    {"title": "Global memory coalescing", "url": "https://developer.nvidia.com/blog/how-access-global-memory-efficiently-cuda-c-kernels/", "what": "NVIDIA blog", "track": "gpu"},
+    {"title": "Efficient matrix transpose", "url": "https://developer.nvidia.com/blog/efficient-matrix-transpose-cuda-cc/", "what": "NVIDIA blog", "track": "gpu"},
+    {"title": "Using shared memory", "url": "https://developer.nvidia.com/blog/using-shared-memory-cuda-cc/", "what": "NVIDIA blog", "track": "gpu"},
+    {"title": "Optimizing Parallel Reduction", "url": "https://developer.download.nvidia.com/compute/cuda/1.1-Beta/x86_website/projects/reduction/doc/reduction.pdf", "what": "Mark Harris's slides", "track": "gpu"},
+    {"title": "Nsight Compute profiling guide", "url": "https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html", "what": "How to read ncu reports", "track": "gpu"},
+    {"title": "How to Optimize a CUDA Matmul Kernel", "url": "https://siboehm.com/articles/22/CUDA-MMM", "what": "Simon Boehm's worklog", "track": "gpu"},
+    {"title": "Triton tutorials", "url": "https://triton-lang.org/main/getting-started/tutorials/", "what": "Official, done in order", "track": "gpu"},
+    {"title": "FlashAttention paper", "url": "https://arxiv.org/abs/2205.14135", "what": "Dao et al., 2022", "track": "gpu"},
+    {"title": "Making Deep Learning Go Brrrr", "url": "https://horace.io/brrr_intro.html", "what": "Compute, bandwidth and overhead", "track": "infer"},
+    {"title": "gpt-fast", "url": "https://github.com/meta-pytorch/gpt-fast", "what": "A full inference engine in under 1,000 lines", "track": "infer"},
+    {"title": "vLLM paper (PagedAttention)", "url": "https://arxiv.org/abs/2309.06180", "what": "Kwon et al., 2023", "track": "infer"},
+    {"title": "vLLM quickstart", "url": "https://docs.vllm.ai/en/stable/getting_started/quickstart/", "what": "Install and serve a model", "track": "infer"},
+    {"title": "AWQ paper", "url": "https://arxiv.org/abs/2306.00978", "what": "Activation-aware weight quantization", "track": "infer"},
+    {"title": "Speculative decoding paper", "url": "https://arxiv.org/abs/2211.17192", "what": "Leviathan et al., 2023", "track": "infer"},
+    {"title": "SGLang paper", "url": "https://arxiv.org/abs/2312.07104", "what": "RadixAttention and prefix caching", "track": "infer"},
+    {"title": "KernelBench paper", "url": "https://arxiv.org/abs/2502.10517", "what": "Can LLMs write efficient GPU kernels?", "track": "infer"},
+    {"title": "KernelBench repo", "url": "https://github.com/ScalingIntelligence/KernelBench", "what": "The benchmark and eval harness", "track": "infer"},
+    {"title": "Wafer Daily Kernel", "url": "https://docs.wafer.ai/daily-kernel", "what": "A daily CUDA challenge", "track": "infer"},
+    {"title": "Building Effective Agents", "url": "https://www.anthropic.com/engineering/building-effective-agents", "what": "Anthropic's agent patterns", "track": "agents"},
+    {"title": "Claude tool use overview", "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview", "what": "API docs", "track": "agents"},
+    {"title": "Build an MCP server", "url": "https://modelcontextprotocol.io/docs/develop/build-server", "what": "Official MCP tutorial", "track": "agents"},
+    {"title": "Effective Context Engineering", "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents", "what": "Anthropic engineering post", "track": "agents"},
+    {"title": "Your AI Product Needs Evals", "url": "https://hamel.dev/blog/posts/evals/", "what": "Hamel Husain", "track": "agents"},
+    {"title": "Multi-Agent Research System", "url": "https://www.anthropic.com/engineering/multi-agent-research-system", "what": "Anthropic engineering post", "track": "agents"}
+  ]
+}
